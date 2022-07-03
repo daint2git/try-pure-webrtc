@@ -6,6 +6,8 @@ function BPage() {
   const remoteConnectionRef = useRef<RTCPeerConnection>(null!);
   const [receivedMessages, setReceivedMessages] = useState<string[]>([]);
   const ICECandidateRef = useRef("");
+  const dataChannelRef = useRef<RTCDataChannel>(null!);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const remoteConnection = new RTCPeerConnection();
@@ -22,13 +24,14 @@ function BPage() {
     };
 
     remoteConnection.ondatachannel = (e) => {
-      const dateChannel = e.channel;
+      const dataChannel = e.channel;
+      dataChannelRef.current = dataChannel;
 
-      dateChannel.onmessage = (e) => {
+      dataChannel.onmessage = (e) => {
         console.log("new message from client!", e.data);
         setReceivedMessages((prev) => [...prev, e.data]);
       };
-      dateChannel.onopen = () => {
+      dataChannel.onopen = () => {
         console.log("remoteConnection - connection opened");
       };
     };
@@ -57,6 +60,11 @@ function BPage() {
     }
   };
 
+  const sendMessage = () => {
+    dataChannelRef.current.send(message);
+    setMessage("");
+  };
+
   return (
     <div>
       <h2>BPage</h2>
@@ -70,6 +78,13 @@ function BPage() {
       <button onClick={() => copy(ICECandidateRef.current)}>
         copy ICE Candidate
       </button>
+      <hr />
+      <input
+        type={"text"}
+        value={message}
+        onChange={(e) => setMessage(e.currentTarget.value)}
+      />
+      <button onClick={sendMessage}>send message</button>
       <hr />
       <h3>Received messages</h3>
       <ul>
